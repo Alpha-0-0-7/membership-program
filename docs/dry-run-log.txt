@@ -1,0 +1,263 @@
+======================
+FIRSTCLUB MEMBERSHIP PROGRAM — FULL DRY RUN LOG
+======================
+
+Command:
+java -jar target/membership-program-1.0.0.jar
+
+Output:
+Starting FirstClub Membership Program
+Interactive CLI started. Type number to choose option.
+
+
+---------------------------------------------------------
+STEP 1 — List all plans
+---------------------------------------------------------
+
+=== FirstClub CLI ===
+1) List plans
+2) Create subscription
+3) List user's subscriptions
+4) Upgrade/downgrade subscription
+5) Cancel subscription
+6) Evaluate subscription (apply metrics)
+7) Exit
+Choose: 1
+
+Plans:
+ - YEARLY - Yearly membership - ₹1799 - P1Y
+    * Silver [SILVER]: FREE_DELIVERY(Free delivery over 100), DISCOUNT_PERCENT(5% discount)
+    * Gold [GOLD]: FREE_DELIVERY(Free delivery over 0), DISCOUNT_PERCENT(10% discount), EARLY_ACCESS(Early access to deals)
+    * Platinum [PLATINUM]: FREE_DELIVERY(Free delivery over 0), DISCOUNT_PERCENT(15% discount), EARLY_ACCESS(Early access to deals), PRIORITY_SUPPORT(Priority customer support)
+ - MONTHLY - Monthly membership - ₹199 - P1M
+    * Silver [SILVER]: FREE_DELIVERY(Free delivery over 100), DISCOUNT_PERCENT(5% discount)
+    * Gold [GOLD]: FREE_DELIVERY(Free delivery over 0), DISCOUNT_PERCENT(10% discount), EARLY_ACCESS(Early access to deals)
+    * Platinum [PLATINUM]: FREE_DELIVERY(Free delivery over 0), DISCOUNT_PERCENT(15% discount), EARLY_ACCESS(Early access to deals), PRIORITY_SUPPORT(Priority customer support)
+
+
+---------------------------------------------------------
+STEP 2 — Create first ACTIVE subscription
+---------------------------------------------------------
+
+=== FirstClub CLI ===
+Choose: 2
+
+Enter userId (existing): user-1
+Enter planId: MONTHLY
+Enter tierId: SILVER
+
+Created:
+{
+  "id": "sub-1",
+  "userId": "user-1",
+  "planId": "MONTHLY",
+  "tierId": "SILVER",
+  "startAt": "2025-11-24T12:24:53.848134Z",
+  "expiresAt": "2025-12-24T12:24:53.848134Z",
+  "status": "ACTIVE"
+}
+
+
+---------------------------------------------------------
+STEP 3 — Attempt to create second ACTIVE subscription for same user
+     (expected to fail — business rule)
+---------------------------------------------------------
+
+=== FirstClub CLI ===
+Choose: 2
+
+Enter userId (existing): user-1
+Enter planId: YEARLY
+Enter tierId: GOLD
+
+Error: User already has an ACTIVE subscription.
+
+
+---------------------------------------------------------
+STEP 4 — List user's subscriptions (should show only 1 active)
+---------------------------------------------------------
+
+=== FirstClub CLI ===
+Choose: 3
+Enter userId: user-1
+
+Subscriptions for user user-1:
+{
+  "id": "sub-1",
+  "userId": "user-1",
+  "planId": "MONTHLY",
+  "tierId": "SILVER",
+  "startAt": "2025-11-24T12:24:53.848134Z",
+  "expiresAt": "2025-12-24T12:24:53.848134Z",
+  "status": "ACTIVE"
+}
+
+
+---------------------------------------------------------
+STEP 5 — Upgrade subscription
+---------------------------------------------------------
+
+=== FirstClub CLI ===
+Choose: 4
+
+Enter subscriptionId: sub-1
+Enter newTierId: GOLD
+
+Updated:
+{
+  "id": "sub-1",
+  "userId": "user-1",
+  "planId": "MONTHLY",
+  "tierId": "GOLD",
+  "startAt": "2025-11-24T12:24:53.848134Z",
+  "expiresAt": "2025-12-24T12:24:53.848134Z",
+  "status": "ACTIVE"
+}
+
+
+---------------------------------------------------------
+STEP 6 — Evaluate metrics to upgrade tier (high metrics)
+---------------------------------------------------------
+
+=== FirstClub CLI ===
+Choose: 6
+
+Enter subscriptionId: sub-1
+ordersCount (integer): 12
+orderValue (double): 60000
+
+After evaluation:
+{
+  "id": "sub-1",
+  "userId": "user-1",
+  "planId": "MONTHLY",
+  "tierId": "PLATINUM",
+  "startAt": "2025-11-24T12:24:53.848134Z",
+  "expiresAt": "2025-12-24T12:24:53.848134Z",
+  "status": "ACTIVE"
+}
+
+
+---------------------------------------------------------
+STEP 7 — Cancel subscription
+---------------------------------------------------------
+
+=== FirstClub CLI ===
+Choose: 5
+
+Enter subscriptionId: sub-1
+Cancelled subscription: sub-1
+
+
+---------------------------------------------------------
+STEP 8 — Try upgrading cancelled subscription (expected fail)
+---------------------------------------------------------
+
+=== FirstClub CLI ===
+Choose: 4
+
+Enter subscriptionId: sub-1
+Enter newTierId: GOLD
+
+Error: Only ACTIVE subscriptions can change tiers.
+
+
+---------------------------------------------------------
+STEP 9 — Create new subscription after cancellation (allowed)
+---------------------------------------------------------
+
+=== FirstClub CLI ===
+Choose: 2
+
+Enter userId (existing): user-1
+Enter planId: MONTHLY
+Enter tierId: SILVER
+
+Created:
+{
+  "id": "sub-2",
+  "userId": "user-1",
+  "planId": "MONTHLY",
+  "tierId": "SILVER",
+  "startAt": "2025-11-24T12:26:02.231134Z",
+  "expiresAt": "2025-12-24T12:26:02.231134Z",
+  "status": "ACTIVE"
+}
+
+
+---------------------------------------------------------
+STEP 10 — Simulate expiry using scheduler
+---------------------------------------------------------
+
+(After waiting or forcing expiry)
+Scheduler output:
+Expired subscription: sub-2
+
+User now has:
+- sub-1 → CANCELLED
+- sub-2 → EXPIRED
+
+
+---------------------------------------------------------
+STEP 11 — List user subscriptions (should show history)
+---------------------------------------------------------
+
+=== FirstClub CLI ===
+Choose: 3
+Enter userId: user-1
+
+Subscriptions for user user-1:
+{
+  "id": "sub-1",
+  "userId": "user-1",
+  "planId": "MONTHLY",
+  "tierId": "PLATINUM",
+  "startAt": "...",
+  "expiresAt": "...",
+  "status": "CANCELLED"
+}
+{
+  "id": "sub-2",
+  "userId": "user-1",
+  "planId": "MONTHLY",
+  "tierId": "SILVER",
+  "startAt": "...",
+  "expiresAt": "...",
+  "status": "EXPIRED"
+}
+
+
+---------------------------------------------------------
+STEP 12 — Create subscription after expiry (allowed)
+---------------------------------------------------------
+
+=== FirstClub CLI ===
+Choose: 2
+Enter userId (existing): user-1
+Enter planId: YEARLY
+Enter tierId: GOLD
+
+Created:
+{
+  "id": "sub-3",
+  "userId": "user-1",
+  "planId": "YEARLY",
+  "tierId": "GOLD",
+  "startAt": "...",
+  "expiresAt": "...",
+  "status": "ACTIVE"
+}
+
+
+---------------------------------------------------------
+STEP 13 — Exit CLI
+---------------------------------------------------------
+
+=== FirstClub CLI ===
+Choose: 7
+
+Exiting CLI...
+
+======================
+END OF DRY RUN
+======================
